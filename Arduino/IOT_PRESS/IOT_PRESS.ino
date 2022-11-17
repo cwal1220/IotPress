@@ -22,22 +22,29 @@ int value = 0;
 
 void setup_wifi() 
 {
-    delay(1000);
-    Serial.print("try WiFi Connection");
+    Serial.println("try WiFi Connection");
+
+    if (WiFi.status() == WL_NO_MODULE) 
+    {
+        Serial.println("WiFi module not present");
+        while (true);
+    }
+    Serial.println("WiFi module check OK!");
     
     if (WiFi.status() == WL_NO_SHIELD) 
     {
         Serial.println("WiFi shield not present");
         while (true);
     }
+    Serial.println("WiFi shield check OK!");
     
     while (WiFi.status() != WL_CONNECTED) // 연결될 때 까지 0.5초 마다 Wi-Fi 연결상태를 확인합니다.
     {
         WiFi.begin(ssid, password); // 앞서 설정한 ssid와 패스워드로 Wi-Fi에 연결합니다.
         Serial.print(".");
-        delay(1000);
+        yield;
     }
-    Serial.println("Connected to WiFi");
+    Serial.println("Connected to WiFi!!");
     printWifiStatus();
 }
 
@@ -71,10 +78,6 @@ void reconnect()
 void setup() 
 {
     Serial.begin(9600);
-    while (!Serial)
-    {
-        ; // wait for serial port to connect. Needed for native USB port only
-    }
     setup_wifi();
     client.setServer(mqttServer, 1883); // MQTT 서버에 연결합니다.
     // client.setCallback(callback);
@@ -89,9 +92,9 @@ void loop()
 
     char buf[20];
     sprintf(buf, "%d %d", getPressFront(), getPressRear());
-    client.publish(topic, buf);
+    client.publish(topic, buf, 0);
     Serial.println(buf);
-    delay(100);
+    delay(300);
     client.loop();
     yield;
 }
