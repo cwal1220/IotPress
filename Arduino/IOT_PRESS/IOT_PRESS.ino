@@ -2,8 +2,8 @@
 #include <WiFiNINA.h> // NANO 33 IoT에서 Wi-Fi 기능을 사용하기 위한 라이브러리 입니다.
 #include <PubSubClient.h>
 
-const char*   ssid = "ParkChan"; // Wi-Fi의 SSID(이름)를 입력합니다.
-const char*   password = "88888888"; // Wi-Fi의 페스워드를 입력합니다.
+const char   ssid[] = "lbbnee"; // Wi-Fi의 SSID(이름)를 입력합니다.
+const char   password[] = "dltnqls9201"; // Wi-Fi의 페스워드를 입력합니다.
 
 const char*   topic = "PRESS_221113/press";
 const char*   mqttServer = "test.mosquitto.org";
@@ -20,8 +20,11 @@ long lastMsg = 0;
 char msg[50];
 int value = 0;
 
-void setup_wifi() 
+int status;
+
+void setup_wifi()
 {
+    status = WL_IDLE_STATUS;
     Serial.println("try WiFi Connection");
 
     if (WiFi.status() == WL_NO_MODULE) 
@@ -38,11 +41,11 @@ void setup_wifi()
     }
     Serial.println("WiFi shield check OK!");
     
-    while (WiFi.status() != WL_CONNECTED) // 연결될 때 까지 0.5초 마다 Wi-Fi 연결상태를 확인합니다.
+    while (status != WL_CONNECTED) // 연결될 때 까지 0.5초 마다 Wi-Fi 연결상태를 확인합니다.
     {
-        WiFi.begin(ssid, password); // 앞서 설정한 ssid와 패스워드로 Wi-Fi에 연결합니다.
+        status = WiFi.begin(ssid, password); // 앞서 설정한 ssid와 패스워드로 Wi-Fi에 연결합니다.
         Serial.print(".");
-        yield;
+        delay(5000);
     }
     Serial.println("Connected to WiFi!!");
     printWifiStatus();
@@ -56,8 +59,8 @@ void callback(char* topic, byte* payload, unsigned int length)
 
 void reconnect() 
 {
-    Serial.print("try WiFi Re-Connect");
-    while (!client.connected()) 
+    Serial.print("try MQTT Connect...");
+    if (!client.connected())
     {
         String clientId = "ArduinoNANO33IoTClinet"; // 클라이언트 ID를 설정합니다.
         clientId += String(random(0xffff), HEX); // 같은 이름을 가진 클라이언트가 발생하는것을 방지하기 위해, 렌덤 문자를 클라이언트 ID에 붙입니다.
@@ -85,17 +88,27 @@ void setup()
 
 void loop() 
 {
-    if (!client.connected()) 
+    if(WiFi.status() != WL_CONNECTED)
     {
-        reconnect();
+      
+        setup_wifi();
     }
-
-    char buf[20];
-    sprintf(buf, "%d %d", getPressFront(), getPressRear());
-    client.publish(topic, buf, 0);
-    Serial.println(buf);
-    delay(300);
-    client.loop();
+    else
+    {
+      if (!client.connected()) 
+      {
+          reconnect();
+      }
+      else
+      {
+          char buf[20];
+          sprintf(buf, "%d %d", getPressFront(), getPressRear());
+          client.publish(topic, buf, 0);
+          Serial.println(buf);
+          delay(300);
+      }
+      client.loop();
+    }
     yield;
 }
 
